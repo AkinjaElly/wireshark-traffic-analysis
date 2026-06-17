@@ -16,9 +16,11 @@ The objective of this project was to establish a controlled network analysis lab
 ## 3. Methodology & Lab Setup
 The project was executed in a dual-environment setup where traffic was generated from an isolated Kali Linux virtual machine and captured live on the host interface via Wireshark.
 
-1.  **Traffic Generation:** Initiated network diagnostic tools on the Kali Linux machine to target both public infrastructure and specific testing environments (`scanme.nmap.org`).
-2.  **Live Capture:** Promiscuous/Standard capture mode was enabled on the active Wi-Fi/Ethernet interface to record inbound and outbound frames.
-3.  **Protocol Filtering:** Applied specific Wireshark display filters (`dns`, `tls`, `tcp`, `icmp`) to isolate and dissect targeted handshakes and packet headers.
+### Traffic Generation Execution (Kali Linux CLI)
+![Kali Linux Traffic Generation](./kali-commands.png)
+
+### Live Packet Analysis Interface (Wireshark Capture)
+![Wireshark Packet Capture View](./wireshark-capture.png)
 
 ---
 
@@ -29,22 +31,22 @@ The project was executed in a dual-environment setup where traffic was generated
 * **Observations:** The network diagnostic successfully transmitted and received 5 packets with `0% packet loss`. The average Round-Trip Time (RTT) was recorded at **20.281 ms** (`min/avg/max/mdev = 17.599/20.281/24.388/2.433 ms`). This establishes a baseline for network latency and path reliability between the guest VM and the public resolver.
 
 ### B. DNS Analysis (Name Resolution)
-* **Packets Isolated:** 13124, 13125
-* **Traffic Flow:** Local Host (`192.168.0.13`) $\rightarrow$ Public Nameserver (`41.212.0.100`)
+* **Packets Isolated:** 110, 124, 125
+* **Traffic Flow:** Local Host (`192.168.0.13`) $\leftrightarrow$ Public Nameserver (`41.212.0.100`)
 * **Protocol:** DNS (Domain Name System)
-* **Analysis:** The capture caught raw outbound DNS queries. Because standard DNS operates over UDP port 53 without native encryption, the requested domain strings and destination IP addresses are fully visible in plaintext within the packet byte-stream.
+* **Analysis:** The capture caught active domain name queries and responses, such as resolving `a.web.tolstoycomments.com` (Packet 124) and `fp.msedge.net` (Packet 110). Because standard DNS operates over UDP port 53 without native encryption, an external eavesdropper can actively reconstruct the host's browsing history by observing these plaintext transactions.
 
-### C. TCP & TLS Analysis (Encrypted Web Traffic)
-* **Packets Isolated:** 13115, 13116, 13117
-* **Traffic Flow:** External Server (`128.136.104.39`) $\leftrightarrow$ Local Host (`192.168.0.13`)
-* **Protocol:** TLSv1.2 (Transport Layer Security)
-* **Analysis:** Application layer traffic captured from this stream shows an established TLSv1.2 cryptographic handshake. While the initial setup parameters are visible, the actual payload data is obscured via symmetric encryption, mitigating sniffing vulnerabilities.
+### C. TCP & TLS Analysis (Encrypted Web Traffic & Handshakes)
+* **Packets Isolated:** 115, 123, 130, 131
+* **Traffic Flow:** External Servers (`128.136.104.39`, `204.79.197.222`) $\leftrightarrow$ Local Host (`192.168.0.13`)
+* **Protocol:** TLSv1.2 / TLSv1.3 (Transport Layer Security)
+* **Analysis:** Modern secure connections were successfully observed. Packet 123 demonstrates a modern cryptographic handshake beginning via a `Client Hello` utilizing **TLSv1.3**. Packet 130 flags a `Hello Retry Request` for cipher negotiation, followed by an encrypted application exchange. This provides robust protection against session hijacking and payload sniffing.
 
 ### D. Active Reconnaissance & Retransmission Drop Analysis
-* **Packets Isolated:** 13114, 13118, 13120
-* **Traffic Flow:** Local Host (`192.168.0.13`) $\rightarrow$ Target Server (`45.33.32.156`)
+* **Packets Isolated:** 112, 114, 118, 120, 132
+* **Traffic Flow:** Local Host (`192.168.0.13`) $\leftrightarrow$ Target Server (`45.33.32.156`)
 * **Protocol:** TCP
-* **Analysis:** During the execution of an Nmap port scan against `scanme.nmap.org`, Wireshark flagged several TCP packets in red/black. This visual warning denotes a high rate of unacknowledged TCP SYN packets and subsequent timeouts. The target host dropped connections actively, prompting the terminal warning: *“giving up on port because retransmission cap hit (10).”* This indicates an active firewall or rate-limiting mechanism on the receiving end.
+* **Analysis:** While running an active Nmap stealth scan (`SYN Stealth Scan`) from the Kali machine against `scanme.nmap.org`, the target network infrastructure reacted defensively. Wireshark highlighted an array of deep red and black lines denoting unexpected `[RST, ACK]` flags (Packets 112, 114, 120, 132). This proves the target host or edge firewall actively tore down unauthorized port probes, limiting the scan accuracy as shown by the terminal's retransmission cap warning.
 
 ---
 
