@@ -17,10 +17,10 @@ The objective of this project was to establish a controlled network analysis lab
 The project was executed in a dual-environment setup where traffic was generated from an isolated Kali Linux virtual machine and captured live on the host interface via Wireshark.
 
 ### Traffic Generation Execution (Kali Linux CLI)
-![Kali Linux Traffic Generation](./kali-commands.png)
+![Kali Linux Traffic Generation](./kali%20commands.jpg)
 
 ### Live Packet Analysis Interface (Wireshark Capture)
-![Wireshark Packet Capture View](./wireshark-capture.png)
+![Wireshark Packet Capture View](./wireshark%20live%20captures.png)
 
 ---
 
